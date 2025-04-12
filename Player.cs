@@ -4,52 +4,14 @@ using System.Collections.Generic;
 using UnityEngine;
 using TMPro;
 
-public class GameManager : MonoBehaviour
+    public class Player : MonoBehaviour
 {
-    public GameObject enemyOnePrefab;
-    public GameObject enemyBigPrefab;
+    public GameObject shieldVisual;
+    private bool shieldActive = false;
+    private float shieldDuration = 5f;
+    private float shieldTimer;
+    private float fallSpeed = 3f;
 
-    private void Start()
-    {
-        InvokeRepeating("CreateEnemyOne", 1, 2);
-        InvokeRepeating("CreateEnemyBig", 1, 3);
-    }
-
-    private void Update()
-    {
-
-    }
-
-    void CreateEnemyOne()
-    {
-        Instantiate(enemyOnePrefab, new Vector3(Random.Range(-8.38f, 8.38f), 6.5f, 0), Quaternion.identity);
-    }
-
-    void CreateEnemyBig()
-    {
-        Instantiate(enemyBigPrefab, new Vector3(Random.Range(-8.38f, 8.38f), 6.5f, 0), Quaternion.identity);
-    }
-}
-
-public class Enemy_Big : MonoBehaviour
-{
-    void Start()
-    {
-
-    }
-
-    void Update()
-    {
-        transform.Translate(new Vector3(-1, -1, 0) * Time.deltaTime * 7f);
-        if (transform.position.y < -6.5f)
-        {
-            Destroy(this.gameObject);
-        }
-    }
-}
-
-public class Player : MonoBehaviour
-{
     private float playerSpeed;
     private float horizontalInput;
     private float verticalInput;
@@ -64,36 +26,68 @@ public class Player : MonoBehaviour
 
     void Start()
     {
+
+        if (shieldVisual != null)
+            shieldVisual.SetActive(false);
+
         playerSpeed = 8f;
+
         score = 0;
         UpdateScoreText();
-    }
+     }
 
-    void Update()
-    {
+     void Update()
+     {
         Movement();
-        score ++;
+        score++;
         UpdateScoreText();
+
+        if (shieldActive)
+        {
+            shieldTimer -= Time.deltaTime;
+            if (shieldTimer <= 0)
+            {
+                DeactivateShield();
+            }
+        }
     }
 
-    void Movement ()
-    {
+     void Movement()
+     {
         horizontalInput = Input.GetAxis("Horizontal");
         verticalInput = Input.GetAxis("Vertical");
         transform.Translate(new Vector3(horizontalInput, verticalInput, 0) * Time.deltaTime * playerSpeed);
         if (transform.position.x > horizontalScreenLimit || transform.position.x < -horizontalScreenLimit)
         {
-            transform.position = new Vector3(transform.position.x * -1, transform.position.y, 0);
+           transform.position = new Vector3(transform.position.x * -1, transform.position.y, 0);
         }
-       float clampedY = Mathf.Clamp(transform.position.y, stopYPositionLower, stopYPositionUpper);
+        float clampedY = Mathf.Clamp(transform.position.y, stopYPositionLower, stopYPositionUpper);
         Vector3 newPosition = transform.position;
         newPosition.y = clampedY;
         transform.position = newPosition;
-    }
+     }
 
-    void UpdateScoreText()
+     void UpdateScoreText()
+     {
+         if (scoreText != null)
+           scoreText.text = "Score: " + score.ToString();
+      }
+    private void OnTriggerEnter(Collider other)
     {
-        if (scoreText != null)
-        scoreText.text = "Score: " + score.ToString();
+        if (other == null) return;
+        if (other.CompareTag("ShieldPowerUp"))
+        {
+            Destroy(other.gameObject);
+            ActivateShield();
+        }
+    }
+    public void ActivateShield()
+    {
+        shieldActive = true;
+        shieldTimer = shieldDuration;
+    }
+    private void DeactivateShield()
+    {
+        shieldActive = false;
     }
 }
